@@ -224,15 +224,22 @@ class RoleSelect(nextcord.ui.Select):
         selected_value = self.values[0]
 
         if selected_value == "reset":
-            # รีเซ็ต View ใหม่
             await interaction.response.edit_message(content=None, view=TopupView(self.bot, self.guild))
             return
 
         selected_role_id = int(selected_value)
         role = interaction.guild.get_role(selected_role_id)
 
+        if not role:
+            await interaction.response.send_message("❌ ไม่พบ Role ที่เลือก", ephemeral=True)
+            return
+
         with open(ROLES_FILE, "r", encoding="utf-8") as f:
             roles_data = json.load(f)
+
+        if selected_value not in roles_data:
+            await interaction.response.send_message("❌ ไม่พบข้อมูล Role นี้ในระบบ", ephemeral=True)
+            return
 
         role_price = roles_data[selected_value]["price"]
 
@@ -244,18 +251,15 @@ class RoleSelect(nextcord.ui.Select):
         )
 
         thumbnail_url = role.icon.url if role.icon else interaction.user.display_avatar.url
-
         embed.set_thumbnail(url=thumbnail_url)
         embed.set_footer(text=f"ID: {role.id}")
 
-        if role:
-            await interaction.response.send_message(
-                embed=embed,
-                view=ConfirmView(self.bot, self.guild, selected_role_id),
-                ephemeral=True
-            )
-        else:
-            await interaction.response.send_message("❌ ไม่พบ Role ที่เลือก", ephemeral=True)
+        await interaction.response.send_message(
+            embed=embed,
+            view=ConfirmView(self.bot, self.guild, selected_role_id),
+            ephemeral=True
+        )
+
 
 
 
